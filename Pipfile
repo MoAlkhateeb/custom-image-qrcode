@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+segno = "1.6.1"
+qrcode-artistic = "3.0.2"
+pillow = "*"
+CairoSVG = "2.7.1"
+
+[dev-packages]
+
+
+[requires]
+python_version = "3.11"
