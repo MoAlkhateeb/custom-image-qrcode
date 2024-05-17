@@ -2,14 +2,18 @@
 
 import os
 import sys
+import pprint
 import warnings
 import configparser
 from typing import Any
 from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor
 
 import qr_code
 
 warnings.simplefilter("ignore", UserWarning)
+
+SUPPORTED_IMAGE_FORMATS = [".png", ".jpg", ".jpeg"]
 
 
 def read_config(config_path: os.PathLike) -> dict[str, Any]:
@@ -35,32 +39,49 @@ def read_config(config_path: os.PathLike) -> dict[str, Any]:
     }
 
 
+def helper(arguments: tuple[os.PathLike, dict[str, Any]]) -> None:
+    """Helper Function to Generate QR Code for Multiple Images."""
+    generate_qr_code(*arguments)
+
+
+def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
+    """Creates a QR Code for the Image and Saves it in the Output Path."""
+
+    if conf["custom_marker"]:
+        marker_path = conf["custom_marker_svg"]
+        marker_name = marker_path.stem
+    else:
+        marker_path = None
+        marker_name = "default"
+
+    save_path = conf["output_path"] / f"QR_{marker_name}_{image_path.stem}.png"
+
+    print(f"[Processing]: {image_path} = {save_path}")
+
+    code = qr_code.QRCode(conf["url"], conf["width"], conf["height"], conf["dpi"])
+
+    code.create_qr_code_image(
+        image_path,
+        dynamic_colours=True,
+        custom_finder_marker_svg=marker_path,
+    )
+
+    code.save(save_path)
+
+    print(f"[DONE]:       {image_path} = {save_path}")
+
+
 def generate_qr_codes(conf: dict[str, Any]) -> None:
     """Generate all qr codes for image in input_path and saves them in output_path."""
-    for image in conf["input_path"].iterdir():
-        if image.suffix.lower() in [".png", ".jpg", ".jpeg"]:
-            if conf["custom_marker"]:
-                marker_path = conf["custom_marker_svg"]
-                marker_name = marker_path.stem
-            else:
-                marker_path = None
-                marker_name = "default"
 
-            save_path = conf["output_path"] / f"QR_{marker_name}_{image.stem}.png"
+    request_list = []
+    for image in find_images(conf["input_path"]):
+        request_list.append((image, conf))
 
-            print(f"[INFO]: Generating QR Code for {str(image):<50} = {save_path}")
+    print("Number of Images: ", len(request_list), "\n")
 
-            code = qr_code.QRCode(
-                conf["url"], conf["width"], conf["height"], conf["dpi"]
-            )
-
-            code.create_qr_code_image(
-                image,
-                dynamic_colours=True,
-                custom_finder_marker_svg=marker_path,
-            )
-
-            code.save(save_path)
+    with ProcessPoolExecutor() as executor:
+        executor.map(helper, request_list)
 
 
 def print_heading(heading: str) -> None:
@@ -72,10 +93,17 @@ def print_heading(heading: str) -> None:
     print("\n")
 
 
+def find_images(input_path: Path) -> list[Path]:
+    """Finds all Images in the Input Path"""
+    return [
+        image
+        for image in input_path.iterdir()
+        if image.suffix.lower() in SUPPORTED_IMAGE_FORMATS
+    ]
+
+
 def main() -> None:
     """The Main Program Entry Point"""
-
-    import pprint
 
     print_heading("QR Code Generator")
 
@@ -88,21 +116,21 @@ def main() -> None:
     if width:
         try:
             conf["width"] = int(width)
-            print("Width Value Changed to ", conf["width"])
+            print("Width Value Changed to", conf["width"])
         except ValueError:
             print(f"Invalid Width Value. Using Default Value={conf['width']}")
 
     if height:
         try:
             conf["height"] = int(height)
-            print("Height Value Changed to ", conf["height"])
+            print("Height Value Changed to", conf["height"])
         except ValueError:
             print(f"Invalid Height Value. Using Default Value={conf['height']}")
 
     if dpi:
         try:
             conf["dpi"] = int(dpi)
-            print("DPI Value Changed to ", conf["dpi"])
+            print("DPI Value Changed to", conf["dpi"])
         except ValueError:
             print(f"Invalid DPI Value. Using Default Value={conf['dpi']}")
 
@@ -111,6 +139,7 @@ def main() -> None:
     print("\n")
 
     print_heading("Generating QR Codes")
+
     generate_qr_codes(conf)
 
 

@@ -3,8 +3,6 @@
 import os
 import io
 import math
-import time
-from functools import wraps
 from pathlib import Path
 from typing import Optional
 
@@ -14,19 +12,6 @@ from PIL import Image
 
 import svg
 import colour_finder
-
-
-def timeit(func):
-    @wraps(func)
-    def timeit_wrapper(*args, **kwargs):
-        start_time = time.perf_counter()
-        result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        total_time = end_time - start_time
-        print(f"Function {func.__name__} Took {total_time:.4f} seconds")
-        return result
-
-    return timeit_wrapper
 
 
 class QRCode:
@@ -104,17 +89,14 @@ class QRCode:
             if not Path(image_path).exists():
                 raise FileNotFoundError(f"Image File Not Found: {image_path}")
 
-            start = time.perf_counter()
             if dynamic_colours:
                 img = Image.open(image_path)
                 dark_colour, light_colour = (
                     colour_finder.ColorFinder.get_dark_light_colours(img)
                 )
-            print(f"Colour Finding Took {time.perf_counter() - start:.4f} seconds")
 
             qr_code_image_bytes = io.BytesIO()
 
-            start = time.perf_counter()
             self._qr_code.to_artistic(
                 scale=self.scale,
                 background=image_path,
@@ -123,7 +105,6 @@ class QRCode:
                 finder_light=light_colour,
                 kind="PNG",
             )
-            print(f"QR Code Creation Took {time.perf_counter() - start:.4f} seconds")
 
             image_bytes = qr_code_image_bytes.getvalue()
 
@@ -144,7 +125,6 @@ class QRCode:
                 custom_finder_marker_svg, dark_colour, light_colour
             )
 
-    @timeit
     def change_finder_markers(
         self,
         svg_path: os.PathLike,
@@ -163,18 +143,19 @@ class QRCode:
 
         marker_positions = self._remove_finding_markers()
 
+        # create a new SVG for the custom finder marker
+        marker_svg = svg.SVG(svg_path)
+        if dark_colour is not None:
+            marker_svg.set_attribute("fill", dark_colour, "dark")
+            marker_svg.set_attribute("stroke", dark_colour, "dark")
+
+        if light_colour is not None:
+            marker_svg.set_attribute("fill", light_colour, "light")
+            marker_svg.set_attribute("stroke", light_colour, "light")
+
         for point1, point2 in marker_positions:
             width = point2[0] - point1[0] + 1
             height = point2[1] - point1[1] + 1
-
-            marker_svg = svg.SVG(svg_path)
-            if dark_colour is not None:
-                marker_svg.set_attribute("fill", dark_colour, "dark")
-                marker_svg.set_attribute("stroke", dark_colour, "dark")
-
-            if light_colour is not None:
-                marker_svg.set_attribute("fill", light_colour, "light")
-                marker_svg.set_attribute("stroke", light_colour, "light")
 
             self._qr_code_image = svg.SVG.overlay_svg_on_image(
                 svg=marker_svg,
@@ -184,7 +165,6 @@ class QRCode:
                 height=height,
             )
 
-    @timeit
     def save(self, save_path: os.PathLike) -> None:
         """Saves the QR Code Image to a File."""
         if self._qr_code_image is None:
@@ -197,7 +177,6 @@ class QRCode:
 
         resized_image.save(save_path, dpi=(self.dpi, self.dpi))
 
-    @timeit
     def _remove_finding_markers(
         self,
     ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
@@ -220,7 +199,6 @@ class QRCode:
         return finding_markers
 
     @staticmethod
-    @timeit
     def get_finding_marker_positions(
         qr_code: "QRCode",
     ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
