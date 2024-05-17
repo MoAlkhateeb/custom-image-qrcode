@@ -8,7 +8,7 @@ from typing import Optional
 
 import segno
 import segno.consts
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 import svg
 import colour_finder
@@ -99,7 +99,7 @@ class QRCode:
 
             self._qr_code.to_artistic(
                 scale=self.scale,
-                background=image_path,
+                background=increase_image_brightness(image_path),
                 target=qr_code_image_bytes,
                 finder_dark=dark_colour,
                 finder_light=light_colour,
@@ -245,3 +245,22 @@ class QRCode:
             (top_right_marker[0], top_right_marker[-1]),
             (bottom_left_marker[0], bottom_left_marker[-1]),
         )
+
+
+def increase_image_brightness(image_path: os.PathLike) -> io.BytesIO:
+    """Increases the Brightness of an Image."""
+    if not Path(image_path).exists():
+        raise FileNotFoundError(f"Image File Not Found: {image_path}")
+
+    img = Image.open(image_path)
+    img = img.convert("RGB")
+    contrast_enhancer = ImageEnhance.Contrast(img)
+    brightness_enhancer = ImageEnhance.Brightness(img)
+    img = contrast_enhancer.enhance(1.3)
+    img = brightness_enhancer.enhance(1.1)
+    img = contrast_enhancer.enhance(1.3)
+
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+
+    return img_bytes

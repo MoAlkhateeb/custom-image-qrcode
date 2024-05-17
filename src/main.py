@@ -9,11 +9,14 @@ from typing import Any
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 
+from tqdm import tqdm
+
 import qr_code
 
 warnings.simplefilter("ignore", UserWarning)
 
 SUPPORTED_IMAGE_FORMATS = [".png", ".jpg", ".jpeg"]
+BAR_FORMAT = "{l_bar}{bar} | {n_fmt}/{total_fmt} [ETA: {remaining}, Elapsed: {elapsed}, {rate_fmt}]"
 
 
 def read_config(config_path: os.PathLike) -> dict[str, Any]:
@@ -41,7 +44,7 @@ def read_config(config_path: os.PathLike) -> dict[str, Any]:
 
 def helper(arguments: tuple[os.PathLike, dict[str, Any]]) -> None:
     """Helper Function to Generate QR Code for Multiple Images."""
-    generate_qr_code(*arguments)
+    return generate_qr_code(*arguments)
 
 
 def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
@@ -56,8 +59,6 @@ def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
 
     save_path = conf["output_path"] / f"QR_{marker_name}_{image_path.stem}.png"
 
-    print(f"[Processing]: {image_path} = {save_path}")
-
     code = qr_code.QRCode(conf["url"], conf["width"], conf["height"], conf["dpi"])
 
     code.create_qr_code_image(
@@ -68,7 +69,7 @@ def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
 
     code.save(save_path)
 
-    print(f"[DONE]:       {image_path} = {save_path}")
+    return save_path
 
 
 def generate_qr_codes(conf: dict[str, Any]) -> None:
@@ -80,8 +81,22 @@ def generate_qr_codes(conf: dict[str, Any]) -> None:
 
     print("Number of Images: ", len(request_list), "\n")
 
-    with ProcessPoolExecutor() as executor:
-        executor.map(helper, request_list)
+    save_paths = []
+
+    with tqdm(
+        total=len(request_list),
+        bar_format=BAR_FORMAT,
+    ) as pbar:
+        with ProcessPoolExecutor() as executor:
+            for save_path in executor.map(helper, request_list):
+                pbar.update()
+                save_paths.append(save_path)
+
+    print("\n")
+    print_heading("Generated QR Codes")
+    for num, path in enumerate(save_paths, start=1):
+        print(f"{num:<3}- {path}")
+    print()
 
 
 def print_heading(heading: str) -> None:
@@ -109,26 +124,34 @@ def main() -> None:
 
     conf = read_config("config.ini")
 
-    width = input("Width of the QR Code: (Enter for Default): ")
-    height = input("Height of the QR Code: (Enter for Default): ")
-    dpi = input("DPI of the QR Code: (Enter for Default): ")
-
+    width = input("\nWidth of the QR Code: (Enter for Default): ")
     if width:
         try:
+            if int(width) <= 0:
+                raise ValueError
+
             conf["width"] = int(width)
             print("Width Value Changed to", conf["width"])
         except ValueError:
             print(f"Invalid Width Value. Using Default Value={conf['width']}")
 
+    height = input("\nHeight of the QR Code: (Enter for Default): ")
     if height:
         try:
+            if int(height) <= 0:
+                raise ValueError
+
             conf["height"] = int(height)
             print("Height Value Changed to", conf["height"])
         except ValueError:
             print(f"Invalid Height Value. Using Default Value={conf['height']}")
 
+    dpi = input("\nDPI of the QR Code: (Enter for Default): ")
     if dpi:
         try:
+            if int(dpi) <= 0:
+                raise ValueError
+
             conf["dpi"] = int(dpi)
             print("DPI Value Changed to", conf["dpi"])
         except ValueError:
