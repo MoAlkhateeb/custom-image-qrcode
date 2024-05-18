@@ -4,16 +4,23 @@ Main entry file that orchastrates QR code generation.
 Author: Mohammed Alkhateeb (@MoAlkhateeb)
 
 pyinstaller Command:
-    pyinstaller --noconfirm --onefile --console --icon "C:/Users/mh/Downloads/qr-code_icon-icons.com_69971.ico" --name "QRCodeGenerator" --add-data "C:/Users/mh/Desktop/CustomImageQR/src/svg.py;." --add-data "C:/Users/mh/Desktop/CustomImageQR/src/qr_code.py;." --add-data "C:/Users/mh/Desktop/CustomImageQR/src/colour_finder.py;." --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/vips.exe;." --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/libvips-42.dll;." --paths "C:/Users/mh/Desktop/vips-dev-8.15"  "C:/Users/mh/Desktop/CustomImageQR/src/main.py"
+    pyinstaller --noconfirm --onefile --console 
+    --icon "C:/Users/mh/Downloads/qr-code_icon-icons.com_69971.ico" 
+    --name "QRCodeGenerator" --add-data "C:/Users/mh/Desktop/CustomImageQR/src/svg.py;." 
+    --add-data "C:/Users/mh/Desktop/CustomImageQR/src/qr_code.py;." 
+    --add-data "C:/Users/mh/Desktop/CustomImageQR/src/colour_finder.py;." 
+    --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/vips.exe;." 
+    --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/libvips-42.dll;." 
+    --paths "C:/Users/mh/Desktop/vips-dev-8.15"  
+    "C:/Users/mh/Desktop/CustomImageQR/src/main.py"
 """
 
-import os
 import sys
 import pprint
 import warnings
 import configparser
-from typing import Any
 from pathlib import Path
+from typing import TypedDict
 from multiprocessing import freeze_support
 from concurrent.futures import ProcessPoolExecutor
 
@@ -21,13 +28,30 @@ from tqdm import tqdm
 
 import qr_code
 
+PathLike = str | Path
+
+
 warnings.simplefilter("ignore", UserWarning)
 
 IS_FROZEN = getattr(sys, "frozen", False)
 SUPPORTED_IMAGE_FORMATS = [".png", ".jpg", ".jpeg"]
 BAR_FORMAT = "{l_bar}{bar} | {n_fmt}/{total_fmt} [ETA: {remaining}, Elapsed: {elapsed}, {rate_fmt}]"
 
-def read_config(config_path: os.PathLike) -> dict[str, Any]:
+
+class Config(TypedDict):
+    """A Typed Dictionary for Configuration Options."""
+
+    width: int
+    height: int
+    dpi: int
+    url: str
+    custom_marker: bool
+    custom_marker_svg: Path
+    input_path: Path
+    output_path: Path
+
+
+def read_config(config_path: PathLike) -> Config:
     """Reads a Config File and Returns a Dictionary of Configurations"""
     config = configparser.ConfigParser()
 
@@ -38,24 +62,24 @@ def read_config(config_path: os.PathLike) -> dict[str, Any]:
 
     config.read(config_path)
 
-    return {
-        "width": config.getint("Specs", "Width"),
-        "height": config.getint("Specs", "Height"),
-        "dpi": config.getint("Specs", "DPI"),
-        "url": config["Specs"]["URL"],
-        "custom_marker": config.getboolean("Specs", "CustomMarker"),
-        "custom_marker_svg": Path(config["Paths"]["CustomMarkerSVG"]),
-        "input_path": Path(config["Paths"]["InputPath"]),
-        "output_path": Path(config["Paths"]["OutputPath"]),
-    }
+    return Config(
+        width=config.getint("Specs", "Width"),
+        height=config.getint("Specs", "Height"),
+        dpi=config.getint("Specs", "DPI"),
+        url=config["Specs"]["URL"],
+        custom_marker=config.getboolean("Specs", "CustomMarker"),
+        custom_marker_svg=Path(config["Paths"]["CustomMarkerSVG"]),
+        input_path=Path(config["Paths"]["InputPath"]),
+        output_path=Path(config["Paths"]["OutputPath"]),
+    )
 
 
-def helper(arguments: tuple[os.PathLike, dict[str, Any]]) -> None:
+def helper(arguments: tuple[PathLike, Config]) -> Path:
     """Helper Function to Generate QR Code for Multiple Images."""
     return generate_qr_code(*arguments)
 
 
-def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
+def generate_qr_code(image_path: PathLike, conf: Config) -> Path:
     """Creates a QR Code for the Image and Saves it in the Output Path."""
 
     if conf["custom_marker"]:
@@ -65,7 +89,7 @@ def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
         marker_path = None
         marker_name = "default"
 
-    save_path = conf["output_path"] / f"QR_{marker_name}_{image_path.stem}.png"
+    save_path = conf["output_path"] / f"QR_{marker_name}_{Path(image_path).stem}.png"
 
     code = qr_code.QRCode(conf["url"], conf["width"], conf["height"], conf["dpi"])
 
@@ -80,7 +104,7 @@ def generate_qr_code(image_path: os.PathLike, conf: dict[str, Any]) -> None:
     return save_path
 
 
-def generate_qr_codes(conf: dict[str, Any]) -> None:
+def generate_qr_codes(conf: Config) -> None:
     """Generate all qr codes for image in input_path and saves them in output_path."""
 
     request_list = []
@@ -89,7 +113,7 @@ def generate_qr_codes(conf: dict[str, Any]) -> None:
 
     print("Number of Images: ", len(request_list), "\n")
 
-    save_paths = []
+    save_paths: list[Path] = []
 
     with tqdm(
         total=len(request_list),

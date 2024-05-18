@@ -11,7 +11,8 @@ pillow = "*"
 tqdm = "*"
 
 [dev-packages]
-
+mypy = "*"
+types-tqdm = "*"
 
 [requires]
 python_version = "3.10"

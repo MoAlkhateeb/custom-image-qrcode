@@ -4,12 +4,12 @@ A module that Creates custom QR Codes (optionally with Images).
 Author: Mohammed Alkhateeb (@MoAlkhateeb)
 """
 
-import os
 import io
 import math
-from PIL import Image
 from pathlib import Path
 from typing import Optional
+
+from PIL import Image
 
 import segno
 import segno.consts
@@ -17,6 +17,10 @@ import qrcode_artistic
 
 import svg
 import colour_finder
+
+PathLike = str | Path
+Point = tuple[int, int]
+Bbox = tuple[Point, Point]
 
 
 class QRCode:
@@ -29,7 +33,7 @@ class QRCode:
         dpi, width and height are only used when saving the QR Code Image.
         """
 
-        self._data: int = data
+        self._data: str = data
         self._width: int = width
         self._height: int = height
         self._dpi: int = dpi
@@ -78,11 +82,11 @@ class QRCode:
 
     def create_qr_code_image(
         self,
-        image_path: Optional[os.PathLike] = None,
+        image_path: Optional[PathLike] = None,
         dark_colour: str = "black",
         light_colour: str = "white",
         dynamic_colours: bool = False,
-        custom_finder_marker_svg: Optional[os.PathLike] = None,
+        custom_finder_marker_svg: Optional[PathLike] = None,
     ) -> None:
         """
         Creates a QR Code using optionally an image.
@@ -117,12 +121,15 @@ class QRCode:
             self._qr_code_image = Image.open(io.BytesIO(image_bytes))
 
         else:
-
-            self._qr_code_image = self._qr_code.to_pil(
+            self._qr_code_image = qrcode_artistic.write_pil(
+                qrcode=self._qr_code,
                 scale=self.scale,
                 finder_dark=dark_colour,
                 finder_light=light_colour,
             )
+
+        if self._qr_code_image is None:
+            raise ValueError("Failed to Create QR Code Image.")
 
         self._qr_code_image = self._qr_code_image.convert("RGB")
 
@@ -133,7 +140,7 @@ class QRCode:
 
     def change_finder_markers(
         self,
-        svg_path: os.PathLike,
+        svg_path: PathLike,
         dark_colour: Optional[str] = "#000000",
         light_colour: Optional[str] = "#FFFFFF",
     ) -> None:
@@ -171,7 +178,7 @@ class QRCode:
                 height=height,
             )
 
-    def save(self, save_path: os.PathLike) -> None:
+    def save(self, save_path: PathLike) -> None:
         """Saves the QR Code Image to a File."""
         if self._qr_code_image is None:
             raise ValueError("No QR Code Image to Save.")
@@ -185,7 +192,7 @@ class QRCode:
 
     def _remove_finding_markers(
         self,
-    ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    ) -> tuple[Bbox, Bbox, Bbox]:
         """
         Completely Removes the Finder Markers from the QR Code.
         Returns the removed Finder Marker Positions.
@@ -207,7 +214,7 @@ class QRCode:
     @staticmethod
     def get_finding_marker_positions(
         qr_code: "QRCode",
-    ) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+    ) -> tuple[Bbox, Bbox, Bbox]:
         """
         Returns the Positions of the Finder Markers.
 

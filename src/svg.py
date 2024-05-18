@@ -5,23 +5,24 @@ Author: Mohammed Alkhateeb (@MoAlkhateeb)
 """
 
 import io
-import os
-from PIL import Image
 from pathlib import Path
 from typing import Optional
 from xml.dom import minidom
+from PIL import Image
 
 import pyvips
+
+PathLike = str | Path
 
 
 class SVG:
     """Custom SVG Class."""
 
-    def __init__(self, svg_path: os.PathLike) -> None:
+    def __init__(self, svg_path: PathLike) -> None:
         if not Path(svg_path).exists():
             raise FileNotFoundError(f"SVG File Not Found: {svg_path}")
 
-        self.svg_path: io.PathLike = svg_path
+        self.svg_path: PathLike = svg_path
         self.svg: minidom.Document = self.read()
 
     def read(self) -> minidom.Document:
@@ -38,12 +39,12 @@ class SVG:
         image_bytes = image.write_to_buffer(".png")
         return Image.open(io.BytesIO(image_bytes))
 
-    def save(self, save_path: os.PathLike) -> None:
+    def save(self, save_path: PathLike) -> None:
         """Saves the SVG to a File."""
         with open(save_path, "w", encoding="utf-8") as file:
             file.write(self.svg.toprettyxml())
 
-    def save_png(self, save_path: os.PathLike, width: int, height: int) -> None:
+    def save_png(self, save_path: PathLike, width: int, height: int) -> None:
         """Saves the SVG as a PNG."""
         image = self.to_image(width, height)
         image.save(save_path)
