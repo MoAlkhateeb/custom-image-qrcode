@@ -6,11 +6,12 @@ name = "pypi"
 [packages]
 segno = "1.6.1"
 qrcode-artistic = "3.0.2"
+pyvips = "2.2.3"
 pillow = "*"
-CairoSVG = "2.7.1"
+tqdm = "*"
 
 [dev-packages]
 
 
 [requires]
-python_version = "3.11"
+python_version = "3.10"

@@ -6,9 +6,12 @@ Modified from the JavaScript version https://github.com/pieroxy/color-finder und
 Author: Mo Alkhateeb (@MoAlkhateeb)
 """
 
+import io
+import os
+from pathlib import Path
 from typing import Callable
 from collections import Counter
-from PIL import Image, ImageColor
+from PIL import Image, ImageColor, ImageEnhance
 
 
 class ColorFinder:
@@ -165,3 +168,22 @@ class ColorFinder:
             saturation = luminosity / (2 - max_value - min_value)
 
         return saturation
+
+
+def colour_correct_image(image_path: os.PathLike) -> io.BytesIO:
+    """Increases the Brightness of an Image."""
+    if not Path(image_path).exists():
+        raise FileNotFoundError(f"Image File Not Found: {image_path}")
+
+    img = Image.open(image_path)
+    img = img.convert("RGB")
+    contrast_enhancer = ImageEnhance.Contrast(img)
+    brightness_enhancer = ImageEnhance.Brightness(img)
+    img = contrast_enhancer.enhance(1.3)
+    img = brightness_enhancer.enhance(1.1)
+    img = contrast_enhancer.enhance(1.3)
+
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+
+    return img_bytes

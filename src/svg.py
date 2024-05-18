@@ -2,12 +2,12 @@
 
 import io
 import os
+from PIL import Image
 from pathlib import Path
 from typing import Optional
 from xml.dom import minidom
 
-import cairosvg
-from PIL import Image
+import pyvips
 
 
 class SVG:
@@ -26,15 +26,13 @@ class SVG:
 
     def to_image(self, width: int, height: int) -> Image.Image:
         """Saves the SVG as a PNG."""
-        image_bytes = io.BytesIO()
-        cairosvg.svg2png(
-            bytestring=self.svg.toxml().encode(),
-            write_to=image_bytes,
-            output_width=width,
-            output_height=height,
+
+        image = pyvips.Image.thumbnail_buffer(
+            self.svg.toxml().encode(), width, height=height, size="force"
         )
-        image_bytes.seek(0)
-        return Image.open(image_bytes)
+
+        image_bytes = image.write_to_buffer(".png")
+        return Image.open(io.BytesIO(image_bytes))
 
     def save(self, save_path: os.PathLike) -> None:
         """Saves the SVG to a File."""

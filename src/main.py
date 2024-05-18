@@ -7,6 +7,7 @@ import warnings
 import configparser
 from typing import Any
 from pathlib import Path
+from multiprocessing import freeze_support
 from concurrent.futures import ProcessPoolExecutor
 
 from tqdm import tqdm
@@ -15,15 +16,15 @@ import qr_code
 
 warnings.simplefilter("ignore", UserWarning)
 
+IS_FROZEN = getattr(sys, "frozen", False)
 SUPPORTED_IMAGE_FORMATS = [".png", ".jpg", ".jpeg"]
 BAR_FORMAT = "{l_bar}{bar} | {n_fmt}/{total_fmt} [ETA: {remaining}, Elapsed: {elapsed}, {rate_fmt}]"
-
 
 def read_config(config_path: os.PathLike) -> dict[str, Any]:
     """Reads a Config File and Returns a Dictionary of Configurations"""
     config = configparser.ConfigParser()
 
-    if getattr(sys, "frozen", False):
+    if IS_FROZEN:
         config_path = Path(sys.executable).parent / "config.ini"
     elif __file__:
         config_path = Path(__file__).parent / "config.ini"
@@ -165,6 +166,17 @@ def main() -> None:
 
     generate_qr_codes(conf)
 
+    if IS_FROZEN:
+        print("Execution Complete... Press Enter to Close this window.")
+        input()
+
 
 if __name__ == "__main__":
+    if IS_FROZEN:
+        freeze_support()
+
     main()
+
+    """
+    pyinstaller --noconfirm --onefile --console --icon "C:/Users/mh/Downloads/qr-code_icon-icons.com_69971.ico" --name "QRCodeGenerator" --add-data "C:/Users/mh/Desktop/CustomImageQR/src/svg.py;." --add-data "C:/Users/mh/Desktop/CustomImageQR/src/qr_code.py;." --add-data "C:/Users/mh/Desktop/CustomImageQR/src/colour_finder.py;." --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/vips.exe;." --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/libvips-42.dll;." --paths "C:/Users/mh/Desktop/vips-dev-8.15"  "C:/Users/mh/Desktop/CustomImageQR/src/main.py"
+    """
