@@ -1,4 +1,8 @@
-"""A Program that Creates custom QR Codes with Images"""
+"""
+A module that holds different SVG file utilities.
+
+Author: Mohammed Alkhateeb (@MoAlkhateeb)
+"""
 
 import io
 import os

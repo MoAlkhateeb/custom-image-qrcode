@@ -3,7 +3,7 @@ Finds the Most Prominent Color in an Image.
 
 Modified from the JavaScript version https://github.com/pieroxy/color-finder under WTFPL, Version 2.
 
-Author: Mo Alkhateeb (@MoAlkhateeb)
+Author: Mohammed Alkhateeb (@MoAlkhateeb)
 """
 
 import io

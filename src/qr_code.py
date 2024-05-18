@@ -1,4 +1,8 @@
-"""Holds Custom QR Code Functionality."""
+"""
+A module that Creates custom QR Codes (optionally with Images).
+
+Author: Mohammed Alkhateeb (@MoAlkhateeb)
+"""
 
 import os
 import io

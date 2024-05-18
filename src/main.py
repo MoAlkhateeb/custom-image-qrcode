@@ -1,4 +1,8 @@
-"""A Program that Creates custom QR Codes with Images"""
+"""
+Main entry file that orchastrates QR code generation.
+
+Author: Mohammed Alkhateeb (@MoAlkhateeb)
+"""
 
 import os
 import sys
@@ -176,7 +180,3 @@ if __name__ == "__main__":
         freeze_support()
 
     main()
-
-    """
-    pyinstaller --noconfirm --onefile --console --icon "C:/Users/mh/Downloads/qr-code_icon-icons.com_69971.ico" --name "QRCodeGenerator" --add-data "C:/Users/mh/Desktop/CustomImageQR/src/svg.py;." --add-data "C:/Users/mh/Desktop/CustomImageQR/src/qr_code.py;." --add-data "C:/Users/mh/Desktop/CustomImageQR/src/colour_finder.py;." --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/vips.exe;." --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/libvips-42.dll;." --paths "C:/Users/mh/Desktop/vips-dev-8.15"  "C:/Users/mh/Desktop/CustomImageQR/src/main.py"
-    """
