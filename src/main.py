@@ -16,6 +16,7 @@ pyinstaller Command:
 """
 
 import sys
+import csv
 import pprint
 import warnings
 import configparser
@@ -49,6 +50,8 @@ class Config(TypedDict):
     custom_marker_svg: Path
     input_path: Path
     output_path: Path
+    use_batch: bool
+    batch_path: Path
 
 
 def read_config(config_path: PathLike) -> Config:
@@ -71,6 +74,8 @@ def read_config(config_path: PathLike) -> Config:
         custom_marker_svg=Path(config["Paths"]["CustomMarkerSVG"]),
         input_path=Path(config["Paths"]["InputPath"]),
         output_path=Path(config["Paths"]["OutputPath"]),
+        use_batch=False,
+        batch_path=Path(config["Paths"]["BatchPath"]),
     )
 
 
@@ -108,8 +113,34 @@ def generate_qr_codes(conf: Config) -> None:
     """Generate all qr codes for image in input_path and saves them in output_path."""
 
     request_list = []
-    for image in find_images(conf["input_path"]):
-        request_list.append((image, conf))
+
+    if not conf["use_batch"]:
+        for image in find_images(conf["input_path"]):
+            request_list.append((image, conf))
+    else:
+        with open(conf["batch_path"], "r", encoding="utf-8") as batch_f:
+            reader = csv.reader(batch_f)
+
+            for row in reader:
+                if len(row) < 2:
+                    print("Malformed row in batch file skipping: ", row)
+                    continue
+
+                rel_path, url = row
+                rel_path = rel_path.strip()
+                url = url.strip()
+
+                rel_path = conf["input_path"] / rel_path
+
+                if not rel_path.is_file():
+                    print(f"Couldn't find the image at '{rel_path}'.")
+                    print("Ensure paths in batch file are relative to the input folder")
+                    continue
+
+                current_conf = conf.copy()
+                current_conf["url"] = url
+
+                request_list.append((rel_path, current_conf))
 
     print("Number of Images: ", len(request_list), "\n")
 
@@ -188,6 +219,17 @@ def main() -> None:
             print("DPI Value Changed to", conf["dpi"])
         except ValueError:
             print(f"Invalid DPI Value. Using Default Value={conf['dpi']}")
+
+    url = input("\nURL of all the QR Code: (Enter for Batch File then Default): ")
+    if url:
+        conf["url"] = url
+        print("URL Value Changed to", conf["url"])
+        print("\nUsing changed URL for all images.")
+    elif conf["batch_path"].is_file():
+        conf["use_batch"] = True
+        print("\nProcessing only images in the batch file.")
+    else:
+        print("\nCouldn't find batch file falling back to default URL in config.")
 
     print_heading("Final Configuration")
     pprint.pprint(conf, indent=4, sort_dicts=True)
