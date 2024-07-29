@@ -3,12 +3,11 @@
 A powerful and flexible QR Code generator that allows you to create custom QR codes with images, custom finder markers, and dynamic color selection. It uses a ProcessPool to generate QR Codes in parallel.
 
 ## Examples
-
-![Linkedin Example](src/output/QR_circular_linkedin.png)
-![Github Example](src/output/QR_circular_github.png)
-![Avatar Example](src/output/QR_circular_MoAlkhateebAvatar.png)
-
-
+<p align="middle"> 
+<img src="src/output/QR_circular_linkedin.png" alt="Linkedin Example" width=400>
+<img src="src/output/QR_circular_github.png" alt="Github Example" width=400>
+<img src="src/output/QR_circular_MoAlkhateebAvatar.png" alt="Avatar Example" width=400>
+</p>
 ## Features
 
 - Generate QR codes with custom sizes and resolutions
