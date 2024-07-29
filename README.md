@@ -8,6 +8,7 @@ A powerful and flexible QR Code generator that allows you to create custom QR co
 <img src="src/output/QR_circular_github.png" alt="Github Example" width=400>
 <img src="src/output/QR_circular_MoAlkhateebAvatar.png" alt="Avatar Example" width=400>
 </p>
+
 ## Features
 
 - Generate QR codes with custom sizes and resolutions
