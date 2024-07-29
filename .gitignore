@@ -163,3 +163,5 @@ output/
 images/
 .DS_Store
 Pipfile.lock
+
+.*

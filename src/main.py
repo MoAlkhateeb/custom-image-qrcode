@@ -2,17 +2,6 @@
 Main entry file that orchastrates QR code generation.
 
 Author: Mohammed Alkhateeb (@MoAlkhateeb)
-
-pyinstaller Command:
-    pyinstaller --noconfirm --onefile --console 
-    --icon "C:/Users/mh/Downloads/qr-code_icon-icons.com_69971.ico" 
-    --name "QRCodeGenerator" --add-data "C:/Users/mh/Desktop/CustomImageQR/src/svg.py;." 
-    --add-data "C:/Users/mh/Desktop/CustomImageQR/src/qr_code.py;." 
-    --add-data "C:/Users/mh/Desktop/CustomImageQR/src/colour_finder.py;." 
-    --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/vips.exe;." 
-    --add-binary "C:/Users/mh/Desktop/vips-dev-8.15/libvips-42.dll;." 
-    --paths "C:/Users/mh/Desktop/vips-dev-8.15"  
-    "C:/Users/mh/Desktop/CustomImageQR/src/main.py"
 """
 
 import sys
@@ -130,7 +119,7 @@ def generate_qr_codes(conf: Config) -> None:
                 rel_path = rel_path.strip()
                 url = url.strip()
 
-                rel_path = conf["input_path"] / rel_path
+                rel_path: Path = conf["input_path"] / rel_path
 
                 if not rel_path.is_file():
                     print(f"Couldn't find the image at '{rel_path}'.")
@@ -220,7 +209,9 @@ def main() -> None:
         except ValueError:
             print(f"Invalid DPI Value. Using Default Value={conf['dpi']}")
 
-    url = input("\nURL of all the QR Code: (Enter for Batch File then Default): ")
+    url = input(
+        "\nURL of all the QR Codes: \n(Press enter to use the Batch File if found or resort to the default url in config): "
+    )
     if url:
         conf["url"] = url
         print("URL Value Changed to", conf["url"])
